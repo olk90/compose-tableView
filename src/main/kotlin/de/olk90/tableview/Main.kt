@@ -13,6 +13,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import de.olk90.tableview.logic.Address
 import de.olk90.tableview.logic.Person
+import de.olk90.tableview.logic.persons
 import de.olk90.tableview.view.TableView
 
 @Composable
@@ -31,7 +32,7 @@ fun App() {
                 modifier = Modifier.padding(10.dp).fillMaxWidth(),
                 singleLine = true
             )
-            TableView(mutableStateOf(listOf<Person>()))
+            TableView(mutableStateOf(persons))
             TableView(mutableStateOf(listOf<Address>()))
         }
 

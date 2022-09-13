@@ -1,9 +1,8 @@
 package de.olk90.tableview.view
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -23,8 +22,24 @@ inline fun <reified T> TableView(content: MutableState<List<T>>) {
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         fields.forEach {
-            val header = getTableHeader(it.annotations)
-            Text(text = header.headerText)
+            Column(verticalArrangement = Arrangement.Center) {
+                val header = getTableHeader(it.annotations)
+                Box(modifier = Modifier.clickable { }) {
+                    Text(
+                        text = header.headerText,
+                        style = MaterialTheme.typography.h6
+                    )
+                }
+
+                content.value.forEach { c ->
+                    val fieldValue = T::class.members.first { f -> f.name == it.name }.call(c)
+                    if (fieldValue != null) {
+                        Text(text = "$fieldValue")
+                    } else {
+                        Text(text = "--")
+                    }
+                }
+            }
         }
     }
 }
