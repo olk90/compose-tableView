@@ -8,6 +8,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.olk90.tableview.logic.Address
@@ -45,7 +46,10 @@ inline fun <reified T> TableView(content: MutableState<List<T>>) {
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             fields.forEach {
-                Column(verticalArrangement = Arrangement.Center) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                     val header = getTableHeader(it.annotations)
                     Box(modifier = Modifier.clickable { }) {
                         Text(
@@ -55,11 +59,13 @@ inline fun <reified T> TableView(content: MutableState<List<T>>) {
                     }
 
                     content.value.forEach { c ->
-                        val fieldValue = T::class.members.first { f -> f.name == it.name }.call(c)
-                        if (fieldValue != null) {
-                            Text(text = "$fieldValue")
-                        } else {
-                            Text(text = "--")
+                        Box(Modifier.clickable {  }) {
+                            val fieldValue = T::class.members.first { f -> f.name == it.name }.call(c)
+                            if (fieldValue != null) {
+                                Text(text = "$fieldValue")
+                            } else {
+                                Text(text = "--")
+                            }
                         }
                     }
                 }
