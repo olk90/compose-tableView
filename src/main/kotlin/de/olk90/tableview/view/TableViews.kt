@@ -8,7 +8,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.olk90.tableview.logic.Address
@@ -30,7 +29,9 @@ inline fun <reified T> TableView(content: MutableState<List<T>>) {
 
     var searchExpression by remember { mutableStateOf("") }
 
-    Column {
+    Column(
+        Modifier.fillMaxWidth()
+    ) {
         OutlinedTextField(
             value = searchExpression,
             onValueChange = {
@@ -41,45 +42,54 @@ inline fun <reified T> TableView(content: MutableState<List<T>>) {
             singleLine = true
         )
 
+        // Header row
+        val headerList = fields.flatMap { it.annotations }.filterIsInstance<TableHeader>()
         Row(
             modifier = Modifier.padding(10.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            fields.forEach {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    val header = getTableHeader(it.annotations)
-                    Box(modifier = Modifier.clickable { }) {
-                        Text(
-                            text = header.headerText,
-                            style = MaterialTheme.typography.h6
-                        )
-                    }
+            headerList.forEach {
+                Box(modifier = Modifier.clickable { }) {
+                    Text(
+                        text = it.headerText,
+                        style = MaterialTheme.typography.h6
+                    )
+                }
+            }
+        }
 
-                    content.value.forEach { c ->
-                        Box(Modifier.clickable {  }) {
-                            val fieldValue = T::class.members.first { f -> f.name == it.name }.call(c)
-                            if (fieldValue != null) {
-                                Text(text = "$fieldValue")
-                            } else {
-                                Text(text = "--")
-                            }
-                        }
+        // Table contents
+        content.value.forEach {
+            Row(
+                modifier = Modifier.padding(10.dp).fillMaxWidth().clickable { },
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                val rowContent = it!!::class.members
+                    .filter { f -> f.annotations.any { a -> a is TableHeader } }
+                    .sortedBy { k ->
+                        val header = getTableHeader(k.annotations)
+                        header.columnIndex
+                    }
+                    .map { t -> t.call(it) }
+                rowContent.forEach { rc ->
+                    if (rc != null) {
+                        Text(text = "$rc")
+                    } else {
+                        Text(text = "--")
                     }
                 }
             }
         }
+
     }
 }
 
 @Composable
 fun TableBody(tableState: MutableState<SelectionState>, scroll: ScrollState) {
     Column(Modifier.verticalScroll(scroll)) {
-        when(tableState.value) {
+        when (tableState.value) {
             SelectionState.PERSONS -> TableView(mutableStateOf(persons))
-            SelectionState.ADDRESSES ->  TableView(mutableStateOf(listOf<Address>()))
+            SelectionState.ADDRESSES -> TableView(mutableStateOf(listOf<Address>()))
         }
     }
 }
