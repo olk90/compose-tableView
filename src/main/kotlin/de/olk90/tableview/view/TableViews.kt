@@ -8,6 +8,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.olk90.tableview.logic.Address
@@ -19,7 +20,7 @@ enum class SelectionState(val heading: String) {
 }
 
 @Composable
-inline fun <reified T> TableView(content: MutableState<List<T>>) {
+inline fun <reified T> TableView(content: MutableState<List<T>>, noinline onRowSelection: () -> Unit) {
     val fields = T::class.members.filter {
         it.annotations.any { a -> a is TableHeader }
     }.sortedBy {
@@ -44,12 +45,19 @@ inline fun <reified T> TableView(content: MutableState<List<T>>) {
 
         // Header row
         val headerList = fields.flatMap { it.annotations }.filterIsInstance<TableHeader>()
+        val fraction = 1.0f / headerList.size
         Row(
             modifier = Modifier.padding(10.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             headerList.forEach {
-                Box(modifier = Modifier.clickable { }) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(fraction)
+                        .clickable {
+                            // TODO sort entries
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
                         text = it.headerText,
                         style = MaterialTheme.typography.h6
@@ -61,7 +69,10 @@ inline fun <reified T> TableView(content: MutableState<List<T>>) {
         // Table contents
         content.value.forEach {
             Row(
-                modifier = Modifier.padding(10.dp).fillMaxWidth().clickable { },
+                modifier = Modifier
+                    .padding(10.dp)
+                    .fillMaxWidth()
+                    .clickable(onClick = onRowSelection),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 val rowContent = it!!::class.members
@@ -72,10 +83,12 @@ inline fun <reified T> TableView(content: MutableState<List<T>>) {
                     }
                     .map { t -> t.call(it) }
                 rowContent.forEach { rc ->
-                    if (rc != null) {
-                        Text(text = "$rc")
-                    } else {
-                        Text(text = "--")
+                    Box(modifier = Modifier.fillMaxWidth(fraction), contentAlignment = Alignment.Center) {
+                        if (rc != null) {
+                            Text(text = "$rc")
+                        } else {
+                            Text(text = "--")
+                        }
                     }
                 }
             }
@@ -88,8 +101,8 @@ inline fun <reified T> TableView(content: MutableState<List<T>>) {
 fun TableBody(tableState: MutableState<SelectionState>, scroll: ScrollState) {
     Column(Modifier.verticalScroll(scroll)) {
         when (tableState.value) {
-            SelectionState.PERSONS -> TableView(mutableStateOf(persons))
-            SelectionState.ADDRESSES -> TableView(mutableStateOf(listOf<Address>()))
+            SelectionState.PERSONS -> TableView(mutableStateOf(persons)) { println("Person table selected") }
+            SelectionState.ADDRESSES -> TableView(mutableStateOf(listOf<Address>())) { println("Addresses table seleceted") }
         }
     }
 }
