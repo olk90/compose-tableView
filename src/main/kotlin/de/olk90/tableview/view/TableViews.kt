@@ -20,7 +20,11 @@ enum class SelectionState(val heading: String) {
 }
 
 @Composable
-inline fun <reified T> TableView(content: MutableState<List<T>>, noinline onRowSelection: () -> Unit) {
+inline fun <reified T> TableView(
+    content: MutableState<List<T>>,
+    indexColumn: Boolean = false,
+    noinline onRowSelection: () -> Unit
+) {
     val fields = T::class.members.filter {
         it.annotations.any { a -> a is TableHeader }
     }.sortedBy {
@@ -46,10 +50,19 @@ inline fun <reified T> TableView(content: MutableState<List<T>>, noinline onRowS
         // Header row
         val headerList = fields.flatMap { it.annotations }.filterIsInstance<TableHeader>()
         val fraction = 1.0f / headerList.size
+        val indexColWidth = 30.dp
         Row(
             modifier = Modifier.padding(10.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
+            if (indexColumn) {
+                Box(modifier = Modifier.width(indexColWidth), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "#",
+                        style = MaterialTheme.typography.h6
+                    )
+                }
+            }
             headerList.forEach {
                 Box(
                     modifier = Modifier.fillMaxWidth(fraction)
@@ -75,6 +88,12 @@ inline fun <reified T> TableView(content: MutableState<List<T>>, noinline onRowS
                     .clickable(onClick = onRowSelection),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
+                if (indexColumn) {
+                    Box(modifier = Modifier.width(indexColWidth), contentAlignment = Alignment.Center) {
+                        Text("${content.value.indexOf(it) + 1}")
+                    }
+                }
+
                 val rowContent = it!!::class.members
                     .filter { f -> f.annotations.any { a -> a is TableHeader } }
                     .sortedBy { k ->
@@ -101,7 +120,7 @@ inline fun <reified T> TableView(content: MutableState<List<T>>, noinline onRowS
 fun TableBody(tableState: MutableState<SelectionState>, scroll: ScrollState) {
     Column(Modifier.verticalScroll(scroll)) {
         when (tableState.value) {
-            SelectionState.PERSONS -> TableView(mutableStateOf(persons)) { println("Person table selected") }
+            SelectionState.PERSONS -> TableView(mutableStateOf(persons), true) { println("Person table selected") }
             SelectionState.ADDRESSES -> TableView(mutableStateOf(listOf<Address>())) { println("Addresses table seleceted") }
         }
     }
