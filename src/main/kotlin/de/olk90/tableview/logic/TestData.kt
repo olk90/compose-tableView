@@ -2,6 +2,11 @@ package de.olk90.tableview.logic
 
 import kotlin.random.Random
 
+
+val addresses = listOf(
+    Address("", "", "", 0, "", 0)
+)
+
 val persons = listOf(
     Person("Dong", "Cannon", Random.nextInt(20, 70), null),
     Person("Roderick", "Huang", Random.nextInt(20, 70), null),

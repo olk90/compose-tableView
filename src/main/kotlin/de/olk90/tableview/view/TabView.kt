@@ -27,7 +27,7 @@ fun TableSelection() {
             content = {
                 Column {
                     Tabs(tableState, scroll)
-                    TableBody(tableState, scroll)
+                    TableBody(tableState)
                 }
             }
         )
