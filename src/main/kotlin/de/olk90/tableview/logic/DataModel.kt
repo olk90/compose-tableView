@@ -26,4 +26,8 @@ data class Address(
     val street: String,
     @TableHeader("House No.", 5)
     val houseNumber: Int
-)
+) {
+    override fun toString(): String {
+        return "$street $houseNumber, $zipCode $city"
+    }
+}
