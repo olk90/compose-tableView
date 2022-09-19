@@ -4,25 +4,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Divider
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Text
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import de.olk90.tableview.logic.addresses
-import de.olk90.tableview.logic.persons
 
-
-enum class SelectionState(val heading: String) {
-    PERSONS("Persons"), ADDRESSES("Addresses")
-}
 
 @Composable
-inline fun <reified T> TableView(
+inline fun <reified T : Any> TableView(
     content: MutableState<List<T>>,
     indexColumn: Boolean = false,
     indexColWidth: Dp = 30.dp,
@@ -64,7 +58,36 @@ inline fun <reified T> TableView(
         val headerList = fields.flatMap { it.annotations }.filterIsInstance<TableHeader>()
         val fraction = 1.0f / headerList.size
 
-        TableHeader(indexColumn, indexColWidth, headerList, fraction)
+        val stateMap = mutableMapOf<TableHeader, SortingState>()
+        headerList.forEach {
+            stateMap[it] = SortingState.NONE
+        }
+        val sortingStates = remember { mutableStateOf(stateMap) }
+
+        val onSortingUpdate: (TableHeader, SortingState) -> Unit = { tableHeader, sortingState ->
+            val sortedList: List<T> = when (sortingState) {
+                SortingState.ASC -> {
+                    tableContent.value.sortedBy { t ->
+                        sort(t, tableHeader)
+                    }
+                }
+
+                SortingState.DESC -> {
+                    tableContent.value.sortedByDescending { t ->
+                        sort(t, tableHeader)
+                    }
+                }
+
+                else -> {
+                    tableContent.value
+                }
+            }
+
+            tableContent.value = sortedList
+
+        }
+
+        TableHeader(indexColumn, indexColWidth, headerList, sortingStates, onSortingUpdate, fraction)
         Divider(thickness = 2.dp)
         TableContent(tableContent, indexColumn, indexColWidth, fraction, onRowSelection)
 
@@ -94,6 +117,8 @@ fun TableHeader(
     indexColumn: Boolean,
     indexColWidth: Dp,
     headerList: List<TableHeader>,
+    sortingStates: MutableState<MutableMap<TableHeader, SortingState>>,
+    onSortingUpdate: (TableHeader, SortingState) -> Unit,
     fraction: Float
 ) {
     Row(
@@ -109,17 +134,33 @@ fun TableHeader(
             }
         }
         headerList.forEach {
+            val sortingState = remember { mutableStateOf(SortingState.NONE) }
             Box(
                 modifier = Modifier.fillMaxWidth(fraction)
                     .clickable {
-                        // TODO sort entries
+                        sortingState.value = updateSortingStates(sortingStates, it)
+                        onSortingUpdate(it, sortingState.value)
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = it.headerText,
-                    style = MaterialTheme.typography.h6
-                )
+                Row {
+                    Text(
+                        text = it.headerText,
+                        style = MaterialTheme.typography.h6
+                    )
+
+                    if (sortingState.value == SortingState.DESC) {
+                        Icon(
+                            Icons.Filled.KeyboardArrowDown,
+                            contentDescription = "",
+                        )
+                    } else if (sortingState.value == SortingState.ASC) {
+                        Icon(
+                            Icons.Filled.KeyboardArrowUp,
+                            contentDescription = "",
+                        )
+                    }
+                }
             }
         }
     }
@@ -177,30 +218,6 @@ inline fun <reified T> TableRow(
                 } else {
                     Text(text = "--")
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun TableBody(tableState: MutableState<SelectionState>) {
-    Row {
-        Column(Modifier.fillMaxWidth(0.7f)) {
-            when (tableState.value) {
-                SelectionState.PERSONS -> TableView(
-                    mutableStateOf(persons),
-                    true
-                ) { println("Person table selected") }
-
-                SelectionState.ADDRESSES -> TableView(
-                    mutableStateOf(addresses)
-                ) { println("Addresses table selected") }
-            }
-        }
-        Column(Modifier.fillMaxWidth()) {
-            when (tableState.value) {
-                SelectionState.PERSONS -> Text("TODO")
-                SelectionState.ADDRESSES -> Text("TODO")
             }
         }
     }
