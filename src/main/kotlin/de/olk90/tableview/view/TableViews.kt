@@ -20,7 +20,7 @@ inline fun <reified T : Any> TableView(
     content: MutableState<List<T>>,
     indexColumn: Boolean = false,
     indexColWidth: Dp = 30.dp,
-    noinline onRowSelection: () -> Unit
+    noinline onRowSelection: (T) -> Unit
 ) {
     val fields = T::class.members.filter {
         it.annotations.any { a -> a is TableHeader }
@@ -174,7 +174,7 @@ inline fun <reified T> TableContent(
     indexColumn: Boolean,
     indexColWidth: Dp,
     fraction: Float,
-    noinline onRowSelection: () -> Unit
+    noinline onRowSelection: (T) -> Unit
 ) {
     LazyColumn {
         items(items = tableContent.value) {
@@ -186,18 +186,20 @@ inline fun <reified T> TableContent(
 
 @Composable
 inline fun <reified T> TableRow(
-    it: T,
+    item: T,
     indexColumn: Boolean,
     rowIndex: Int,
     indexColWidth: Dp,
     fraction: Float,
-    noinline onRowSelection: () -> Unit
+    noinline onRowSelection: (T) -> Unit
 ) {
     Row(
         modifier = Modifier
             .padding(10.dp)
             .fillMaxWidth()
-            .clickable(onClick = onRowSelection),
+            .clickable(onClick = {
+                onRowSelection(item)
+            }),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         if (indexColumn) {
@@ -206,13 +208,13 @@ inline fun <reified T> TableRow(
             }
         }
 
-        val rowContent = it!!::class.members
+        val rowContent = item!!::class.members
             .filter { f -> f.annotations.any { a -> a is TableHeader } }
             .sortedBy { k ->
                 val header = getTableHeader(k.annotations)
                 header.columnIndex
             }
-            .map { t -> t.call(it) }
+            .map { t -> t.call(item) }
         rowContent.forEach { rc ->
             Box(modifier = Modifier.fillMaxWidth(fraction), contentAlignment = Alignment.Center) {
                 if (rc != null) {
