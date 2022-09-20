@@ -17,11 +17,11 @@ data class Address(
     @TableHeader("Country", 0)
     val country: String,
     @TableHeader("State", 1)
-    val state: String,
+    val state: String?,
     @TableHeader("City", 2)
     val city: String,
     @TableHeader("ZIP", 3)
-    val zipCode: Int,
+    val zipCode: String,
     @TableHeader("Street", 4)
     val street: String,
     @TableHeader("House No.", 5)
