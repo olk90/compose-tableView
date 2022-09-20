@@ -29,6 +29,8 @@ headers from left to right.
 
 ## The `TableView` itself
 
+![persons.png](screenshots/persons.png)
+
 The composable `TableView` takes a couple of arguments:
 
 ```kotlin
