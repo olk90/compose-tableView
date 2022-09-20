@@ -58,10 +58,7 @@ inline fun <reified T : Any> TableView(
         val headerList = fields.flatMap { it.annotations }.filterIsInstance<TableHeader>()
         val fraction = 1.0f / headerList.size
 
-        val stateMap = mutableMapOf<TableHeader, SortingState>()
-        headerList.forEach {
-            stateMap[it] = SortingState.NONE
-        }
+        val stateMap = headerList.associateWith { mutableStateOf(SortingState.NONE) }
         val sortingStates = remember { mutableStateOf(stateMap) }
 
         val onSortingUpdate: (TableHeader, SortingState) -> Unit = { tableHeader, sortingState ->
@@ -117,7 +114,7 @@ fun TableHeader(
     indexColumn: Boolean,
     indexColWidth: Dp,
     headerList: List<TableHeader>,
-    sortingStates: MutableState<MutableMap<TableHeader, SortingState>>,
+    sortingStates: MutableState<Map<TableHeader, MutableState<SortingState>>>,
     onSortingUpdate: (TableHeader, SortingState) -> Unit,
     fraction: Float
 ) {
@@ -134,12 +131,11 @@ fun TableHeader(
             }
         }
         headerList.forEach {
-            val sortingState = remember { mutableStateOf(SortingState.NONE) }
             Box(
                 modifier = Modifier.fillMaxWidth(fraction)
                     .clickable {
-                        sortingState.value = updateSortingStates(sortingStates, it)
-                        onSortingUpdate(it, sortingState.value)
+                        updateSortingStates(sortingStates, it)
+                        onSortingUpdate(it, sortingStates.value[it]!!.value)
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -149,16 +145,22 @@ fun TableHeader(
                         style = MaterialTheme.typography.h6
                     )
 
-                    if (sortingState.value == SortingState.DESC) {
-                        Icon(
-                            Icons.Filled.KeyboardArrowDown,
-                            contentDescription = "",
-                        )
-                    } else if (sortingState.value == SortingState.ASC) {
-                        Icon(
-                            Icons.Filled.KeyboardArrowUp,
-                            contentDescription = "",
-                        )
+                    when (sortingStates.value[it]!!.value) {
+                        SortingState.DESC -> {
+                            Icon(
+                                Icons.Filled.KeyboardArrowDown,
+                                contentDescription = "",
+                            )
+                        }
+                        SortingState.ASC -> {
+                            Icon(
+                                Icons.Filled.KeyboardArrowUp,
+                                contentDescription = "",
+                            )
+                        }
+                        else -> {
+                            // to be left empty
+                        }
                     }
                 }
             }

@@ -11,21 +11,20 @@ enum class SortingState {
 }
 
 fun updateSortingStates(
-    sortingStates: MutableState<MutableMap<TableHeader, SortingState>>,
+    sortingStates: MutableState<Map<TableHeader, MutableState<SortingState>>>,
     tableHeader: TableHeader
-): SortingState {
+) {
     val newMap = sortingStates.value
-    when (sortingStates.value[tableHeader]!!) {
-        SortingState.ASC -> newMap[tableHeader] = SortingState.DESC
-        SortingState.DESC -> newMap[tableHeader] = SortingState.NONE
-        SortingState.NONE -> newMap[tableHeader] = SortingState.ASC
+    when (sortingStates.value[tableHeader]!!.value) {
+        SortingState.ASC -> newMap[tableHeader]!!.value = SortingState.DESC
+        SortingState.DESC -> newMap[tableHeader]!!.value = SortingState.NONE
+        SortingState.NONE -> newMap[tableHeader]!!.value = SortingState.ASC
     }
     sortingStates.value.filter { it.key != tableHeader }.forEach{
-        newMap[it.key] = SortingState.NONE
+        newMap[it.key]!!.value = SortingState.NONE
     }
 
     sortingStates.value = newMap
-    return newMap[tableHeader]!!
 }
 
 
