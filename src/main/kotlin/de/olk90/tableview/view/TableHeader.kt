@@ -1,6 +1,6 @@
 package de.olk90.tableview.view
 
-@Target(AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION)
 annotation class TableHeader(
     val headerText: String,
     val columnIndex: Int
