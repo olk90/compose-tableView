@@ -36,6 +36,7 @@ The composable `TableView` takes a couple of arguments:
 ```kotlin
 @Composable
 inline fun <reified T : Any> TableView(
+    currentItem: MutableState<T?>, // currently selected item
     content: MutableState<List<T>>, // contains all elements to be displayed
     indexColumn: Boolean = false, // simple numbering of the table rows
     indexColWidth: Dp = 30.dp, // to adjust the index column's width
