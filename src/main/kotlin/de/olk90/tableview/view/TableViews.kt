@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
@@ -17,7 +18,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 inline fun <reified T : Any> TableView(
-    content: MutableState<List<T>>,
+    currentItem: MutableState<T?>,
+    tableContent: MutableState<List<T>>,
     indexColumn: Boolean = false,
     indexColWidth: Dp = 30.dp,
     noinline onRowSelection: (T) -> Unit
@@ -32,9 +34,10 @@ inline fun <reified T : Any> TableView(
     var search by remember { mutableStateOf("") }
     val onSearchUpdate: (String) -> Unit = { search = it }
 
-    val tableContent = remember { mutableStateOf(content.value) }
-    val onContentUpdate: () -> Unit = {
-        val filteredList = content.value.filter {
+    val internalTableContent = remember { mutableStateOf(tableContent.value) }
+    val onContentUpdate: (String) -> Unit = {
+        onSearchUpdate(it)
+        val filteredList = internalTableContent.value.filter {
             val values = fields.map { kc ->
                 val value = kc.call(it)
                 if (value == null) {
@@ -53,10 +56,12 @@ inline fun <reified T : Any> TableView(
         Modifier.fillMaxWidth()
     ) {
 
-        SearchField(search, onSearchUpdate, onContentUpdate)
+        SearchField(search, onContentUpdate)
 
-        val headerList = fields.flatMap { it.annotations }.filterIsInstance<TableHeader>()
-        val fraction = 1.0f / headerList.size
+        val headerList = fields
+            .flatMap { it.annotations }
+            .filter { it is TableHeader && it.columnIndex >= 0 }
+            .map { it as TableHeader }
 
         val stateMap = headerList.associateWith { mutableStateOf(SortingState.NONE) }
         val sortingStates = remember { mutableStateOf(stateMap) }
@@ -84,9 +89,9 @@ inline fun <reified T : Any> TableView(
 
         }
 
-        TableHeader(indexColumn, indexColWidth, headerList, sortingStates, onSortingUpdate, fraction)
+        TableHeader(indexColumn, indexColWidth, headerList, sortingStates, onSortingUpdate)
         Divider(thickness = 2.dp)
-        TableContent(tableContent, indexColumn, indexColWidth, fraction, onRowSelection)
+        TableContent(currentItem, tableContent, indexColumn, indexColWidth, onRowSelection)
 
     }
 }
@@ -94,18 +99,23 @@ inline fun <reified T : Any> TableView(
 @Composable
 fun SearchField(
     search: String,
-    onSearchUpdate: (String) -> Unit,
-    onContentUpdate: () -> Unit
+    onContentUpdate: (String) -> Unit
 ) {
     OutlinedTextField(
         value = search,
         onValueChange = {
-            onSearchUpdate(it)
-            onContentUpdate()
+            onContentUpdate(it)
         },
         label = { Text("Search ...") },
         modifier = Modifier.padding(10.dp).fillMaxWidth(),
-        singleLine = true
+        singleLine = true,
+        trailingIcon = {
+            IconButton(onClick = {
+                onContentUpdate("")
+            }) {
+                Icon(imageVector = Icons.Filled.Clear, contentDescription = "Clear")
+            }
+        }
     )
 }
 
@@ -115,34 +125,38 @@ fun TableHeader(
     indexColWidth: Dp,
     headerList: List<TableHeader>,
     sortingStates: MutableState<Map<TableHeader, MutableState<SortingState>>>,
-    onSortingUpdate: (TableHeader, SortingState) -> Unit,
-    fraction: Float
+    onSortingUpdate: (TableHeader, SortingState) -> Unit
 ) {
-    Row(
-        modifier = Modifier.padding(10.dp).fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        if (indexColumn) {
-            Box(modifier = Modifier.width(indexColWidth), contentAlignment = Alignment.Center) {
-                Text(
-                    text = "#",
-                    style = MaterialTheme.typography.h6
-                )
+    Card(modifier = Modifier.padding(3.dp).fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(3.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            if (indexColumn) {
+                Row(
+                    modifier = Modifier.width(indexColWidth).height(30.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "#",
+                        style = MaterialTheme.typography.body1
+                    )
+                }
             }
-        }
-        headerList.forEach {
-            Box(
-                modifier = Modifier.fillMaxWidth(fraction)
-                    .clickable {
-                        updateSortingStates(sortingStates, it)
-                        onSortingUpdate(it, sortingStates.value[it]!!.value)
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Row {
+            headerList.forEach {
+                Row(
+                    modifier = Modifier.fillMaxWidth().weight(1f).height(30.dp)
+                        .clickable {
+                            updateSortingStates(sortingStates, it)
+                            onSortingUpdate(it, sortingStates.value[it]!!.value)
+                        },
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = it.headerText,
-                        style = MaterialTheme.typography.h6
+                        style = MaterialTheme.typography.body1
                     )
 
                     when (sortingStates.value[it]!!.value) {
@@ -150,14 +164,18 @@ fun TableHeader(
                             Icon(
                                 Icons.Filled.KeyboardArrowDown,
                                 contentDescription = "",
+                                modifier = Modifier.width(15.dp)
                             )
                         }
+
                         SortingState.ASC -> {
                             Icon(
                                 Icons.Filled.KeyboardArrowUp,
                                 contentDescription = "",
+                                modifier = Modifier.width(15.dp)
                             )
                         }
+
                         else -> {
                             // to be left empty
                         }
@@ -170,16 +188,16 @@ fun TableHeader(
 
 @Composable
 inline fun <reified T> TableContent(
+    currentItem: MutableState<T?>,
     tableContent: MutableState<List<T>>,
     indexColumn: Boolean,
     indexColWidth: Dp,
-    fraction: Float,
     noinline onRowSelection: (T) -> Unit
 ) {
     LazyColumn {
         items(items = tableContent.value) {
             val rowIndex = tableContent.value.indexOf(it) + 1
-            TableRow(it, indexColumn, rowIndex, indexColWidth, fraction, onRowSelection)
+            TableRow(it, indexColumn, rowIndex, indexColWidth, onRowSelection, it == currentItem.value)
         }
     }
 }
@@ -190,37 +208,47 @@ inline fun <reified T> TableRow(
     indexColumn: Boolean,
     rowIndex: Int,
     indexColWidth: Dp,
-    fraction: Float,
-    noinline onRowSelection: (T) -> Unit
+    noinline onRowSelection: (T) -> Unit,
+    selected: Boolean
 ) {
-    Row(
+    val color = if (selected) MaterialTheme.colors.primary else MaterialTheme.colors.background
+    Card(
         modifier = Modifier
-            .padding(10.dp)
+            .padding(3.dp)
             .fillMaxWidth()
-            .clickable(onClick = {
+            .clickable {
                 onRowSelection(item)
-            }),
-        horizontalArrangement = Arrangement.SpaceEvenly
+            },
+        backgroundColor = color
     ) {
-        if (indexColumn) {
-            Box(modifier = Modifier.width(indexColWidth), contentAlignment = Alignment.Center) {
-                Text("$rowIndex")
+        Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (indexColumn) {
+                Row(
+                    modifier = Modifier.width(indexColWidth),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "$rowIndex")
+                }
             }
-        }
 
-        val rowContent = item!!::class.members
-            .filter { f -> f.annotations.any { a -> a is TableHeader } }
-            .sortedBy { k ->
-                val header = getTableHeader(k.annotations)
-                header.columnIndex
-            }
-            .map { t -> t.call(item) }
-        rowContent.forEach { rc ->
-            Box(modifier = Modifier.fillMaxWidth(fraction), contentAlignment = Alignment.Center) {
-                if (rc != null) {
-                    Text(text = "$rc")
-                } else {
-                    Text(text = "--")
+            val rowContent = item!!::class.members
+                .filter { f -> f.annotations.any { a -> a is TableHeader && a.columnIndex >= 0 } }
+                .sortedBy { k ->
+                    val header = getTableHeader(k.annotations)
+                    header.columnIndex
+                }
+                .map { t -> t.call(item) }
+            rowContent.forEach { rc ->
+                Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    if (rc != null) {
+                        Text(modifier = Modifier.padding(5.dp), text = "$rc")
+                    } else {
+                        Text(modifier = Modifier.padding(5.dp), text = "--")
+                    }
                 }
             }
         }

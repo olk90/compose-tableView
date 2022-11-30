@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import de.olk90.tableview.logic.Address
 import de.olk90.tableview.logic.Person
 import de.olk90.tableview.logic.addresses
@@ -56,6 +57,9 @@ fun Tabs(tableState: MutableState<SelectionState>, scroll: ScrollState) {
 @Composable
 fun TableBody(tableState: MutableState<SelectionState>) {
 
+    val personContent = mutableStateOf(persons)
+    val addressContent = mutableStateOf(addresses)
+
     val person: MutableState<Person?> = remember { mutableStateOf(null) }
     val address: MutableState<Address?> = remember { mutableStateOf(null) }
 
@@ -70,14 +74,18 @@ fun TableBody(tableState: MutableState<SelectionState>) {
     Row {
         Column(Modifier.fillMaxWidth(0.7f)) {
             when (tableState.value) {
-                SelectionState.PERSONS -> TableView(
-                    mutableStateOf(persons),
-                    true,
-                    onRowSelection = onPersonSelect
-                )
+                SelectionState.PERSONS -> {
+                    TableView(
+                        person,
+                        personContent,
+                        true,
+                        onRowSelection = onPersonSelect
+                    )
+                }
 
                 SelectionState.ADDRESSES -> TableView(
-                    mutableStateOf(addresses),
+                    address,
+                    addressContent,
                     onRowSelection = onAddressSelect
                 )
             }
@@ -93,15 +101,17 @@ fun TableBody(tableState: MutableState<SelectionState>) {
 
 @Composable
 fun PersonView(person: MutableState<Person?>) {
-    val value = person.value
-    if (value == null) {
-        Text("Please select person")
-    } else {
-        val address = value.address
-        if (address == null) {
-            Text("${value.firstName} ${value.lastName} is ${value.age}")
+    Box(modifier = Modifier.padding(10.dp)) {
+        val value = person.value
+        if (value == null) {
+            Text("Please select person")
         } else {
-            Text("${value.firstName} ${value.lastName} is ${value.age} and lives in ${value.address.city}, ${value.address.country}")
+            val address = value.address
+            if (address == null) {
+                Text("${value.firstName} ${value.lastName} is ${value.age}")
+            } else {
+                Text("${value.firstName} ${value.lastName} is ${value.age} and lives in ${value.address.city}, ${value.address.country}")
+            }
         }
     }
 }
