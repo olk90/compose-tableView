@@ -76,6 +76,7 @@ fun TableBody(tableState: MutableState<SelectionState>) {
             when (tableState.value) {
                 // TableView with index column
                 SelectionState.PERSONS -> TableView(
+                    person,
                     mutableStateOf(persons),
                     true,
                     onRowSelection = onPersonSelect
@@ -83,6 +84,7 @@ fun TableBody(tableState: MutableState<SelectionState>) {
 
                 // TableView without index column
                 SelectionState.ADDRESSES -> TableView(
+                    address,
                     mutableStateOf(addresses),
                     onRowSelection = onAddressSelect
                 )
