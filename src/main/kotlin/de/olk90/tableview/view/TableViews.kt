@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -89,7 +90,6 @@ inline fun <reified T : Any> TableView(
         }
 
         TableHeader(indexColumn, indexColWidth, headerList, sortingStates, onSortingUpdate)
-        Divider(thickness = 2.dp)
         TableContent(currentItem, tableContent, indexColumn, indexColWidth, onRowSelection)
 
     }
@@ -126,7 +126,7 @@ fun TableHeader(
     sortingStates: MutableState<Map<TableHeader, MutableState<SortingState>>>,
     onSortingUpdate: (TableHeader, SortingState) -> Unit
 ) {
-    Card(modifier = Modifier.padding(3.dp).fillMaxWidth()) {
+    Card(modifier = Modifier.padding(5.dp).fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(3.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -139,7 +139,8 @@ fun TableHeader(
                 ) {
                     Text(
                         text = "#",
-                        style = MaterialTheme.typography.body1
+                        style = MaterialTheme.typography.body1,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -155,7 +156,8 @@ fun TableHeader(
                 ) {
                     Text(
                         text = it.headerText,
-                        style = MaterialTheme.typography.body1
+                        style = MaterialTheme.typography.body1,
+                        fontWeight = FontWeight.Bold
                     )
 
                     when (sortingStates.value[it]!!.value) {
