@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 inline fun <reified T : Any> TableView(
     currentItem: MutableState<T?>,
-    tableContent: MutableState<List<T>>,
+    content: MutableState<List<T>>,
     indexColumn: Boolean = false,
     indexColWidth: Dp = 30.dp,
     noinline onRowSelection: (T) -> Unit
@@ -32,12 +32,11 @@ inline fun <reified T : Any> TableView(
     }
 
     var search by remember { mutableStateOf("") }
-    val onSearchUpdate: (String) -> Unit = { search = it }
 
-    val internalTableContent = remember { mutableStateOf(tableContent.value) }
+    val tableContent = remember { mutableStateOf(content.value) }
     val onContentUpdate: (String) -> Unit = {
-        onSearchUpdate(it)
-        val filteredList = internalTableContent.value.filter {
+        search = it
+        val filteredList = content.value.filter {
             val values = fields.map { kc ->
                 val value = kc.call(it)
                 if (value == null) {
