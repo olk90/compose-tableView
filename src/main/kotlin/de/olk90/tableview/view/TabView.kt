@@ -5,8 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.*
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.olk90.tableview.logic.Address
@@ -43,7 +44,7 @@ fun TableSelection() {
 @Composable
 fun Tabs(tableState: MutableState<SelectionState>, scroll: ScrollState) {
     TabRow(selectedTabIndex = 0) {
-        SelectionState.values().forEach {
+        SelectionState.entries.forEach {
             Tab(text = { Text(it.heading) }, selected = tableState.value == it, onClick = {
                 tableState.value = it
                 runBlocking {
